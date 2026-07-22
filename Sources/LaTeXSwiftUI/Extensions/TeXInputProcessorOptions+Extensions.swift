@@ -37,7 +37,16 @@ extension TeXInputProcessorOptions {
   convenience init(processEscapes: Bool, errorMode: LaTeX.ErrorMode) {
     self.init()
     self.processEscapes = processEscapes
-    
+
+    // MathJaxSwift 3.5.0 ships `defaultDigits` with its escapes stripped
+    // (`\{,\}` → `{,}`, `\.` → `.`), so the unescaped `.` matches *any*
+    // character and the tokenizer swallows whatever follows a number: `x^{2}`
+    // loses its closing brace and MathJax fails with "Extra open brace or
+    // missing close brace". Restore MathJax's own default regex.
+    // See colinc86/MathJaxSwift#45.
+    digits = #"^(?:[0-9]+(?:\{,\}[0-9]{3})*(?:\.[0-9]*)?|\.[0-9]+)"#
+
+
     var packages = TeXInputProcessorOptions.Packages.all
     if errorMode != .rendered {
       if let noErrorsIndex = packages.firstIndex(of: TeXInputProcessorOptions.Packages.noerrors) {
